@@ -290,9 +290,12 @@ def plot_skeleton_kpts(im, kpts, steps, img_size=960):
 
 
 class YoloPose:
-    def __init__(self, onnx_path):
+    def __init__(self, onnx_path, conf_thres=0.25, iou_thres=0.45):
         self.ort_sess = ort.InferenceSession(onnx_path)
         self.input_name = self.ort_sess.get_inputs()[0].name
+
+        self.conf_thres = conf_thres
+        self.iou_thres = iou_thres
 
     def __call__(self, image):
         (output,) = self.ort_sess.run([], {self.input_name: image})
@@ -300,8 +303,8 @@ class YoloPose:
 
         output = non_max_suppression_kpt(
             output,
-            0.25,
-            0.65,
+            self.conf_thres,
+            self.iou_thres,
             nc=1,
             nkpt=17,
             kpt_label=True,

@@ -7,6 +7,7 @@ import cv2
 import torch
 import torchvision
 
+
 import onnxruntime as ort
 
 
@@ -293,16 +294,18 @@ class YoloPose:
 
     def __call__(self, image):
         (output,) = self.ort_sess.run([], {self.input_name: image})
+        print(output.mean())
         output = torch.from_numpy(output)
 
         output = non_max_suppression_kpt(
             output,
             0.25,
             0.65,
-            1,
-            17,
+            nc=1,
+            nkpt=17,
             kpt_label=True,
         )
+        print(output)
         with torch.no_grad():
             output = output_to_keypoint(output)
 
@@ -313,4 +316,4 @@ class YoloPose:
         for idx in range(output.shape[0]):
             plot_skeleton_kpts(nimg, output[idx, 7:].T, 3)
 
-        return nimg
+        return nimg.copy()

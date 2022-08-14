@@ -53,6 +53,7 @@ def cvimg_from_np(img):
 
 
 def npimg_from_cv(img):
+    img = img.astype(np.float32)
     img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, HWC to CHW
     img = np.expand_dims(img, axis=0)  # add batch dim
     img = np.ascontiguousarray(img)

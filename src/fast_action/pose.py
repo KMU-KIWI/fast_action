@@ -195,7 +195,7 @@ def output_to_keypoint(output):
     return np.array(targets)
 
 
-def plot_skeleton_kpts(im, kpts, steps, orig_shape=None):
+def plot_skeleton_kpts(im, kpts, steps, img_size=960):
     # Plot the skeleton and keypointsfor coco datatset
     palette = np.array(
         [
@@ -254,7 +254,7 @@ def plot_skeleton_kpts(im, kpts, steps, orig_shape=None):
     for kid in range(num_kpts):
         r, g, b = pose_kpt_color[kid]
         x_coord, y_coord = kpts[steps * kid], kpts[steps * kid + 1]
-        if not (x_coord % 640 == 0 or y_coord % 640 == 0):
+        if not (x_coord % img_size == 0 or y_coord % img_size == 0):
             if steps == 3:
                 conf = kpts[steps * kid + 2]
                 if conf < 0.5:
@@ -272,9 +272,19 @@ def plot_skeleton_kpts(im, kpts, steps, orig_shape=None):
             conf2 = kpts[(sk[1] - 1) * steps + 2]
             if conf1 < 0.5 or conf2 < 0.5:
                 continue
-        if pos1[0] % 640 == 0 or pos1[1] % 640 == 0 or pos1[0] < 0 or pos1[1] < 0:
+        if (
+            pos1[0] % img_size == 0
+            or pos1[1] % img_size == 0
+            or pos1[0] < 0
+            or pos1[1] < 0
+        ):
             continue
-        if pos2[0] % 640 == 0 or pos2[1] % 640 == 0 or pos2[0] < 0 or pos2[1] < 0:
+        if (
+            pos2[0] % img_size == 0
+            or pos2[1] % img_size == 0
+            or pos2[0] < 0
+            or pos2[1] < 0
+        ):
             continue
         cv2.line(im, pos1, pos2, (int(r), int(g), int(b)), thickness=2)
 
@@ -284,17 +294,8 @@ class YoloPose:
         self.ort_sess = ort.InferenceSession(onnx_path)
         self.input_name = self.ort_sess.get_inputs()[0].name
 
-    @property
-    def num_joints(self) -> int:
-        return 17
-
-    @property
-    def num_skeletons(self) -> int:
-        return 2
-
     def __call__(self, image):
         (output,) = self.ort_sess.run([], {self.input_name: image})
-        print(output.mean())
         output = torch.from_numpy(output)
 
         output = non_max_suppression_kpt(
@@ -305,15 +306,14 @@ class YoloPose:
             nkpt=17,
             kpt_label=True,
         )
-        print(output)
         with torch.no_grad():
             output = output_to_keypoint(output)
 
-        nimg = image[0].transpose(1, 2, 0) * 255
-        nimg = nimg.astype(np.uint8)
-        nimg = cv2.cvtColor(nimg, cv2.COLOR_RGB2BGR)
+        output = np.expand_dims(output, axis=0)
 
-        for idx in range(output.shape[0]):
-            plot_skeleton_kpts(nimg, output[idx, 7:].T, 3)
+        bboxes = output[:, :, :7]
 
-        return nimg.copy()
+        keypoints = output[:, :, 7:]
+        skeletons = keypoints.reshape(1, keypoints.shape[1], -1, 3)
+
+        return bboxes, skeletons

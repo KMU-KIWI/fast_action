@@ -1,7 +1,5 @@
 import cv2
 
-from torchvision import transforms
-
 from fast_action.pose import YoloPose
 from fast_action.videos import letterbox, npimg_from_cv
 
@@ -9,19 +7,16 @@ from fast_action.videos import letterbox, npimg_from_cv
 def test_yolo_pose():
     pose_estimator = YoloPose("yolov7-w6-pose.onnx")
 
-    image = cv2.imread("./person.jpg")
-    image, _, _ = letterbox(image, 960, auto=False)
-    image = npimg_from_cv(image) / 255
+    img = cv2.imread("./1.jpg")
+    img, _, _ = letterbox(img, 960, auto=False)
+    img = npimg_from_cv(img)
 
-    skeletons = pose_estimator(image)
+    bboxes, skeletons = pose_estimator(img)
 
-    cv2.imshow("dlfkjasdk", skeletons)
-
-    cv2.waitKey(0)
-
+    _, num_skeletons, num_joints, _ = skeletons.shape
     assert skeletons.shape == (
         1,
-        pose_estimator.num_skeletons,
-        pose_estimator.num_joints,
+        num_skeletons,
+        num_joints,
         3,
     )

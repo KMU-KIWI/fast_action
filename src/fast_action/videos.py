@@ -48,8 +48,10 @@ def letterbox(
 
 
 def cvimg_from_np(img):
-    img = img[0, ::-1].transpose(1, 2, 0)  # RGB to BGR, CHW to HWC
-    return img.copy()
+    nimg = img[0].transpose(1, 2, 0) * 255
+    nimg = nimg.astype(np.uint8)
+    nimg = cv2.cvtColor(nimg, cv2.COLOR_RGB2BGR)
+    return nimg
 
 
 def npimg_from_cv(img):
@@ -57,39 +59,25 @@ def npimg_from_cv(img):
     img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, HWC to CHW
     img = np.expand_dims(img, axis=0)  # add batch dim
     img = np.ascontiguousarray(img)
-    return img
+    return img / 255
 
 
 class Video:
-    """
-    Captures frame from camera or video file
-    """
+    def __init__(self, source):
+        if isinstance(source, int):
+            source = int(source)
+        self.cap = cv2.VideoCapture(source, )
+        self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))  # depends on fourcc available camera
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+        self.cap.set(cv2.CAP_PROP_FPS, 60)
 
-    def __init__(self, source, img_size=640, is_rect=False, stride=32):
-        self.img_size = img_size
-        self.is_rect = is_rect
-        self.stride = stride
+    def __iter__(self):
+        return self
 
-        self.cap = cv2.VideoCapture(0)
-
-    def read(self):
-        """
-        Read single frame from camera or file
-
-        make sure output frame matches height, width by adding letterboxes
-
-        Returns:
-            numpy array of shape (1, 3, height, width)
-        """
-        # Capture
+    def __next__(self):
         ret, img = self.cap.read()
-
-        # Letterbox
-        img, ratio, (dw, dh) = letterbox(
-            img, self.img_size, auto=self.is_rect, stride=self.stride
-        )
-
-        # Convert
-        img = npimg_from_cv(img)
-
-        return img
+        if ret:
+            return img
+        else:
+            raise StopIteration

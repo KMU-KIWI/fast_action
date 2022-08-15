@@ -1,20 +1,13 @@
-import cv2
+import numpy as np
 
 from fast_action import videos
 
 
 def test_video_capture():
-    img_size = 640
-    video = videos.Video(0, img_size=img_size)
+    video = videos.Video(0)
 
-    for _ in range(10):
-        image = video.read()
-        assert image.shape == (1, 3, img_size, img_size)
+    for img in video:
+        break
 
-    image = video.read()
-    assert image.shape == (1, 3, img_size, img_size)
-
-    cv2.imshow("test_video_capture", videos.cvimg_from_np(image))
-
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    assert isinstance(img, np.ndarray)
+    assert img.shape[2] == 3

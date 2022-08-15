@@ -5,7 +5,7 @@ import onnxruntime as ort
 
 class SGN:
     def __init__(self, onnx_path):
-        self.ort_sess = ort.InferenceSession(onnx_path)
+        self.ort_sess = ort.InferenceSession(onnx_path, providers=['CUDAExecutionProvider'])
         self.input_name = self.ort_sess.get_inputs()[0].name
 
     def __call__(self, skeletons, w, h):

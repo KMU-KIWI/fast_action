@@ -291,7 +291,7 @@ def plot_skeleton_kpts(im, kpts, steps, img_size=960):
 
 class YoloPose:
     def __init__(self, onnx_path, conf_thres=0.25, iou_thres=0.45):
-        self.ort_sess = ort.InferenceSession(onnx_path)
+        self.ort_sess = ort.InferenceSession(onnx_path, providers=['CUDAExecutionProvider'])
         self.input_name = self.ort_sess.get_inputs()[0].name
 
         self.conf_thres = conf_thres
@@ -309,6 +309,9 @@ class YoloPose:
             nkpt=17,
             kpt_label=True,
         )
+        if output[0].nelement() == 0:
+            return None, None
+
         with torch.no_grad():
             output = output_to_keypoint(output)
 

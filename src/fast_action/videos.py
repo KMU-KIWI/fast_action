@@ -66,7 +66,11 @@ class Video:
     def __init__(self, source):
         if isinstance(source, int):
             source = int(source)
-        self.cap = cv2.VideoCapture(source)
+        self.cap = cv2.VideoCapture(source, )
+        self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))  # depends on fourcc available camera
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+        self.cap.set(cv2.CAP_PROP_FPS, 60)
 
     def __iter__(self):
         return self
